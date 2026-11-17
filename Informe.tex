@@ -667,6 +667,39 @@ and stops without printing a tree: the cycle is $N.v \to D.e \to N.e \to N.v$, w
 loop of the modified rule against the value rule of the same production. The test suite asserts
 this output and also asserts that nothing is evaluated when the graph is cyclic.
 
+\section{Use of generative AI tools}
+
+The assignment requires stating in the README which generative AI tools were used and for what
+purpose; we repeat it here for completeness, with one clarification about the visualizer.
+
+\begin{itemize}[leftmargin=1.1em,itemsep=2pt]
+\item \textbf{Claude} (Anthropic): used as a reading aid, to clarify passages of the book that we
+found difficult --- the fixed point of FIRST and FOLLOW, the difference between S-attributed and
+L-attributed definitions, and the direction of the edges of the dependency graph. Every explanation
+was checked against Aho et al. and against the program.
+\item \textbf{Hermes Agent}: used as support for the code --- locating bugs, reviewing the
+implementation, and drafting the README, this report and the guide of the presentation.
+\end{itemize}
+
+The optional visualizer of Section~4.7 deserves a separate sentence, because it was written with the
+assistant's help. That help covers the \emph{interface} only: the HTTP server of the standard library,
+the HTML of the pages, the SVG drawing and the layout of the tree and of the graph. The visualizer
+contains no algorithmic logic: it does not compute a set, build a table, walk the automaton or
+evaluate an attribute. It is a client: it calls the modules of Items~1--3 and draws what they return
+(Figure~\ref{fig:visualizador} is its output, not its logic).
+
+The ``brain'' of the project is elsewhere and is the part we defend: the fixed point of FIRST and
+FOLLOW and the predictive table in \nt{first\_follow.py} and \nt{ll1.py}; the LR(0) automaton, the
+ACTION/GOTO tables and the LR parser in \nt{slr1.py}; and the SDD as data with the dependency graph,
+the topological order and the cycle detection in \nt{sdd.py}. That is what implements the algorithms
+of Sections 4.4, 4.6, 5.1 and 5.2, and it is what the 93 tests check. Deleting
+\nt{visualizador.py} leaves the delivery complete: \nt{main.py} still produces the exact output of
+Section~2.2.2 and the test suite still passes.
+
+None of us used AI tools to replace the reading of the book or the hand-worked examples: the sets and
+the tables of this report were computed by the program and verified by hand, and every member of the
+group can explain and modify the code during the presentation.
+
 \section{Problems found and how we solved them}
 
 \paragraph{Repeated alternatives created false conflicts.} A grammar is a \emph{set} of

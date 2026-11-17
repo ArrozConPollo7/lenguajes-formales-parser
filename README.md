@@ -281,7 +281,10 @@ used and what for:
   between S-attributed and L-attributed definitions, the direction of the edges
   of the dependency graph). We checked every explanation against the book.
 - **Hermes Agent**: used as support for the code — locating bugs, reviewing the
-  implementation, and helping to draft this README and the report.
+  implementation, writing the interface of the optional visualizer (its HTTP layer,
+  its HTML and its SVG drawing, which contain no algorithmic logic: the visualizer
+  only draws what the modules return), and helping to draft this README and the
+  report.
 
 We did not use AI tools to replace the reading of the book or the hand-worked
 examples: the FIRST/FOLLOW sets and tables in the report were computed by the
