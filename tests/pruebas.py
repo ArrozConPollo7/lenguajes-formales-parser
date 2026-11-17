@@ -22,6 +22,7 @@ sys.path.insert(0, RAIZ)
 import grammar
 import first_follow
 import ll1
+import sdd
 import slr1
 
 
@@ -84,6 +85,10 @@ PROPIA_FOLLOW_VACIO = '2\nS -> a\nX -> b\n'
 # conflictos reduce/reduce. El lenguaje es {ab, ba}.
 # (Ejemplo clasico; se verifico con el programa antes de usarlo.)
 LL1_SIN_SLR = '3\nS -> AaAb BbBa\nA -> e\nB -> e\n'
+
+# Gramatica y SDD del Item 3. Es la misma que esta en docs/gramatica_sdd.txt y
+# en sdd.py: tres no terminales, trece producciones y N recursiva por la derecha.
+GRAMATICA_SDD = '3\nS -> N\nN -> DN e\nD -> 0 1 2 3 4 5 6 7 8 9\n'
 
 
 def pruebas_item_1():
@@ -418,12 +423,241 @@ def pruebas_main():
     comprobar('main sin Q al final', (salida, codigo), (MENU + 'yes\n' + MENU, 0))
 
 
+def arbol_sdd(cadena, circular=False):
+    """Analiza una cadena con la gramatica del Item 3 y evalua su SDD.
+
+    Recibe: la cadena (sin '$') y si se usa la SDD circular del paso 6.
+    Devuelve la tupla (aceptada, raiz, nodos, indice, orden, ciclo).
+    """
+    g = grammar.leer_gramatica(io.StringIO(GRAMATICA_SDD))
+    first = first_follow.first_de_simbolos(g)
+    follow = first_follow.follow(g, first)
+    tabla, conflictos = ll1.construir_tabla(g, first, follow)
+
+    conjunto = sdd.reglas_circulares() if circular else None
+    reglas = sdd.reglas_por_indice(g, conjunto)
+
+    aceptada, raiz = ll1.parsear_ll1(g, tabla, cadena)
+
+    if not aceptada:
+        return False, None, [], {}, [], None
+
+    nodos, indice, orden, ciclo = sdd.evaluar(raiz, reglas)
+
+    return True, raiz, nodos, indice, orden, ciclo
+
+
+def valor_sdd(cadena):
+    """Valor del atributo principal (S.v) para una cadena del Item 3, o None."""
+    aceptada, raiz, nodos, indice, orden, ciclo = arbol_sdd(cadena)
+
+    if not aceptada or ciclo is not None:
+        return None
+
+    return sdd.valor_principal(raiz)
+
+
+def atributos_de(simbolo):
+    """Devuelve {atributo: clase} de un simbolo segun TABLA_ATRIBUTOS.
+
+    Un terminal no aparece en la tabla (salvo 'digito', que representa a
+    cualquiera de los diez): su unico atributo es la lexval que aporta el
+    analizador lexico.
+    """
+    clases = {}
+
+    for entrada in sdd.TABLA_ATRIBUTOS:
+        if entrada[0] == simbolo:
+            clases[entrada[1]] = entrada[2]
+
+    if len(clases) == 0 and not simbolo.isupper():
+        clases['lexval'] = 'sintetizado'
+
+    return clases
+
+
+def tiene_recursion(g, cabeza):
+    """True si 'cabeza' aparece en el cuerpo de alguna de sus producciones (G2)."""
+    for cuerpo in g[cabeza]:
+        if cabeza in cuerpo:
+            return True
+
+    return False
+
+
+def pruebas_item_3():
+    """Pruebas de la SDD del Item 3: definicion, evaluacion y circularidad."""
+
+    g = grammar.leer_gramatica(io.StringIO(GRAMATICA_SDD))
+    first = first_follow.first_de_simbolos(g)
+    follow = first_follow.follow(g, first)
+
+    # G1 (paso 1): la gramatica propia tiene que pasar la prueba de algun parser.
+    comprobar('SDD: la gramatica es LL(1)', ll1.construir_tabla(g, first, follow)[1], [])
+    producciones, por_cabeza = slr1.aumentar(g)
+    estados, transiciones = slr1.automata_lr0(producciones, por_cabeza)
+    comprobar('SDD: la gramatica es SLR(1)',
+              slr1.construir_tablas(producciones, estados, transiciones, follow)[2], [])
+
+    # G2 (paso 1): tres no terminales, seis producciones o mas y N recursivo.
+    comprobar('SDD: tres no terminales', len(g), 3)
+    comprobar('SDD: seis producciones o mas',
+              len(grammar.lista_producciones(g)) >= 6, True)
+    comprobar('SDD: N es recursivo', tiene_recursion(g, 'N'), True)
+
+    # Paso 2: el simbolo inicial no tiene atributos heredados.
+    comprobar('SDD: S sin atributos heredados',
+              atributos_de('S').get('len'), None)
+    comprobar('SDD: S no tiene heredados',
+              'heredado' in atributos_de('S').values(), False)
+
+    # Paso 2: cada atributo sintetizado de la cabeza y cada heredado de un no
+    # terminal del cuerpo se define EXACTAMENTE UNA VEZ en su produccion.
+    definiciones_correctas = True
+    for produccion in sdd.REGLAS:
+        cabeza, cuerpo = produccion
+        esperados = set()
+
+        for atributo in atributos_de(cabeza):
+            if atributos_de(cabeza)[atributo] == 'sintetizado':
+                esperados.add((0, atributo))
+
+        for posicion in range(len(cuerpo)):
+            clases = atributos_de(cuerpo[posicion])
+
+            # Los terminales reciben su lexval del analizador lexico, no de una regla.
+            if len(clases) == 0:
+                continue
+
+            for atributo in clases:
+                if clases[atributo] == 'heredado':
+                    esperados.add((posicion + 1, atributo))
+
+        definidos = []
+        for regla in sdd.REGLAS[produccion]:
+            definidos.append(regla['define'])
+
+        if sorted(definidos) != sorted(esperados):
+            definiciones_correctas = False
+            print('  produccion ' + cabeza + ' -> ' + grammar.formatear_cuerpo(cuerpo)
+                  + ': definidos ' + str(sorted(definidos))
+                  + ', esperados ' + str(sorted(esperados)))
+
+    comprobar('SDD: define cada atributo una sola vez', definiciones_correctas, True)
+
+    # Paso 2: todo atributo usado existe en esa produccion o es sintetizado del
+    # hijo que lo aporta (por ejemplo D.v, que define la produccion D -> d).
+    # En la posicion 0 solo se puede usar un atributo heredado de la cabeza: es
+    # el unico que ya trae el padre (por ejemplo N.e al definir D.e).
+    usos_correctos = True
+    for produccion in sdd.REGLAS:
+        cabeza, cuerpo = produccion
+        definidos = set()
+
+        for regla in sdd.REGLAS[produccion]:
+            definidos.add(regla['define'])
+
+        for regla in sdd.REGLAS[produccion]:
+            for posicion, atributo in regla['usa']:
+                if (posicion, atributo) in definidos:
+                    continue
+
+                if posicion == 0:
+                    if atributos_de(cabeza).get(atributo) != 'heredado':
+                        usos_correctos = False
+                    continue
+
+                clases = atributos_de(cuerpo[posicion - 1])
+
+                if clases.get(atributo) != 'sintetizado':
+                    usos_correctos = False
+
+    comprobar('SDD: todo atributo usado esta disponible', usos_correctos, True)
+
+    # Paso 6: cinco cadenas, con la mas corta (epsilon) y una de cinco digitos.
+    comprobar('SDD valor 101', valor_sdd('101'), 101)
+    comprobar('SDD valor 7', valor_sdd('7'), 7)
+    comprobar('SDD valor de la cadena vacia', valor_sdd(''), 0)
+    comprobar('SDD valor 999', valor_sdd('999'), 999)
+    comprobar('SDD valor 0042', valor_sdd('0042'), 42)
+
+    # Una cadena que no pertenece al lenguaje: no hay arbol ni evaluacion.
+    comprobar('SDD cadena fuera del lenguaje', valor_sdd('12x'), None)
+
+    # Paso 6: anidamiento profundo (300 digitos) sin recursion de Python.
+    profunda = '7' * 300
+    comprobar('SDD valor con 300 digitos', valor_sdd(profunda), int(profunda))
+
+    # Arbol anotado exacto de '7' (paso 5 del enunciado).
+    aceptada, raiz, nodos, indice, orden, ciclo = arbol_sdd('7')
+    comprobar('SDD arbol anotado de 7', '\n'.join(sdd.texto_arbol(nodos, indice)),
+              'S#1 [v=7]\n'
+              '  N#2 [e=0, len=1, v=7]\n'
+              '    D#3 [e=0, v=7]\n'
+              '      7#4 [lexval=7]\n'
+              '    N#5 [e=-1, len=0, v=0]')
+
+    comprobar('SDD orden de evaluacion de 7',
+              [sdd.texto_atributo(v, nodos, indice) for v in orden],
+              ['7#4.lexval', 'D#3.v', 'N#5.len', 'N#2.len', 'N#2.e',
+               'D#3.e', 'N#5.e', 'N#5.v', 'N#2.v', 'S#1.v'])
+
+    # El orden impreso es un orden topologico: cada atributo aparece despues de
+    # todos los que usa (Seccion 5.2.2).
+    nodos101, indice101, grafo = sdd.grafo_dependencias(
+        arbol_sdd('101')[1], sdd.reglas_por_indice(g))
+    orden101 = arbol_sdd('101')[4]
+    vistos = set()
+    topologico = True
+    for vertice in orden101:
+        for dependencia in grafo[vertice]:
+            if dependencia not in vistos:
+                topologico = False
+        vistos.add(vertice)
+    comprobar('SDD orden topologico', topologico, True)
+    comprobar('SDD orden determinista', orden101, arbol_sdd('101')[4])
+
+    # El mismo arbol lo producen los dos parsers del Item 2 (cruce LL(1)/SLR(1)).
+    aceptada_ll, raiz_ll = ll1.parsear_ll1(g, ll1.construir_tabla(g, first, follow)[0], '0042')
+    aceptada_lr, raiz_lr = slr1.parsear_lr(producciones,
+                                           slr1.construir_tablas(producciones, estados,
+                                                                 transiciones, follow)[0],
+                                           slr1.construir_tablas(producciones, estados,
+                                                                 transiciones, follow)[1],
+                                           '0042')
+    reglas = sdd.reglas_por_indice(g)
+    nodos_ll = sdd.evaluar(raiz_ll, reglas)
+    nodos_lr = sdd.evaluar(raiz_lr, reglas)
+    comprobar('SDD arbol LL(1) y SLR(1) identico',
+              sdd.texto_arbol(nodos_ll[0], nodos_ll[1]),
+              sdd.texto_arbol(nodos_lr[0], nodos_lr[1]))
+
+    # Paso 6: la SDD circular se detecta y se informa el ciclo; no se evalua nada.
+    aceptada, raiz, nodos, indice, orden, ciclo = arbol_sdd('101', circular=True)
+    comprobar('SDD circular detectada', ciclo is not None, True)
+    comprobar('SDD circular no evalua', orden, [])
+    comprobar('SDD circular informa el ciclo',
+              sdd.texto_ciclo(ciclo, nodos, indice),
+              'N#2.v -> D#3.e -> N#2.e -> N#2.v')
+
+    # Los mismos cinco casos desde la linea de comandos con --sdd.
+    salida, error, codigo = ejecutar(['--sdd'], GRAMATICA_SDD + '101\n7\ne\n12x\n\n')
+    comprobar('main --sdd valores', [linea for linea in salida.split('\n')
+                                     if linea.startswith('S#1.v =') or linea == 'no'],
+              ['S#1.v = 101', 'S#1.v = 7', 'S#1.v = 0', 'no'])
+
+    salida, error, codigo = ejecutar(['--sdd', '--circular'], GRAMATICA_SDD + '101\n')
+    comprobar('main --sdd --circular', salida,
+              'SDD is circular: N#2.v -> D#3.e -> N#2.e -> N#2.v\n')
+
+
 def main():
     """Ejecuta todas las pruebas y devuelve 0 si todo paso, 1 si algo fallo."""
     pruebas_item_1()
     pruebas_item_2_ll1()
     pruebas_item_2_slr1()
     pruebas_main()
+    pruebas_item_3()
 
     print('')
     print('Correctas: ' + str(CORRECTAS[0]) + '   Fallidas: ' + str(FALLIDAS[0]))

@@ -59,12 +59,51 @@ mensaje de bienvenida, un *prompt* o una línea en blanco, las pruebas fallan.
   por la izquierda no terminaría; `main` solo llama al parser cuando la
   gramática ya pasó la comprobación de LL(1).
 
+## Ítem 3: la SDD y su evaluador
+
+Decisiones que hay que poder explicar en la sustentación.
+
+- **La SDD es un dato.** `REGLAS[(cabeza, cuerpo)]` es una lista de reglas y cada
+  regla dice qué atributo define, cuáles usa y con qué función se calcula. El
+  evaluador (`grafo_dependencias`, `orden_topologico`, `evaluar`) no conoce esta
+  gramática: cambiar la SDD es cambiar esa tabla. Las reglas se escriben por
+  producción (cabeza y cuerpo) y `reglas_por_indice` las pasa a índices, porque el
+  índice es lo que comparten los ítems LR(0), el parser y el árbol.
+- **Los vértices del grafo son `(número de nodo, atributo)`**, no `id(nodo)`:
+  con direcciones de memoria el orden topológico cambiaba entre ejecuciones y el
+  orden impreso no se podía reproducir.
+- **El valor se guarda en el nodo del vértice**, que no siempre es el nodo de la
+  regla: en `N -> DN`, la regla `D.e = N.e` define un atributo heredado del hijo.
+  Guardarlo en el nodo de la regla rompía la evaluación con un `KeyError` en el
+  siguiente atributo que lo usaba.
+- **Kahn para el orden, DFS con pila para el ciclo.** Si al final quedan vértices
+  sin ordenar hay ciclo; se recorre el subgrafo restante con una pila y se
+  reporta el tramo cerrado (`N#2.v -> D#3.e -> N#2.e -> N#2.v` con la SDD
+  circular).
+- **La gramática del ítem 3 se escribe `N -> DN e`**, no `N -> D N e`: el espacio
+  separa alternativas, así que la segunda forma son tres producciones (`D`, `N`,
+  `e`) y la gramática deja de ser LL(1): los conflictos aparecen en `M[N, a]`.
+- **La SDD no es L-atribuida.** En `S -> N`, la regla `N.e = N.len - 1` define un
+  atributo heredado con un sintetizado del mismo símbolo. Eso viola la Sección
+  5.2.4 y es justamente el argumento de por qué se usa el método general del
+  grafo: ninguna pasada única sobre el árbol evalúa esta SDD.
+- **Salida del ítem 3**: por cada cadena aceptada, el árbol anotado (una línea por
+  nodo, `simbolo#numero` y atributos en orden alfabético), el orden de evaluación
+  y `S#1.v = valor`. Si la cadena no pertenece al lenguaje, solo `no`.
+
 ## Verificación
 
-Las 64 pruebas se corren desde la raíz del proyecto y comparan la salida exacta
-de los cuatro casos del enunciado, los conjuntos de `FIRST`/`FOLLOW` y los
-parsers sobre gramáticas de prueba:
+Las 90 pruebas se corren desde la raíz del proyecto y comparan la salida exacta
+de los cuatro casos del enunciado, los conjuntos de `FIRST`/`FOLLOW`, los
+parsers, el árbol anotado del ítem 3, el orden topológico, la detección de la SDD
+circular y el cruce entre los dos parsers:
 
 ```bash
 python3 tests/pruebas.py
 ```
+
+## Errores del informe y de los ejemplos
+
+- El ejemplo del README declaraba `2` no terminales con dos líneas de `S`, y
+  partía el cuerpo `aSb` en dos alternativas. La forma correcta es `1` y
+  `S -> aSb e`. Hay una prueba explícita del formato de las alternativas.

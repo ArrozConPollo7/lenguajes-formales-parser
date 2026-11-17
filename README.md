@@ -1,34 +1,58 @@
-# Lenguajes Formales — parser LL(1) y SLR(1)
+# Formal Languages — LL(1) and SLR(1) parsers with an SDD evaluator
 
-Proyecto de Lenguajes Formales en Python puro (solo biblioteca estándar, sin
-generadores de parsers ni dependencias externas). Lee una gramática libre de
-contexto, calcula `FIRST` y `FOLLOW`, decide si es **LL(1)** y/o **SLR(1)**, y
-parsea cadenas con el algoritmo que corresponda siguiendo el libro de Aho,
-Lam, Sethi y Ullman (2.ª edición):
+Course project for *Formal Languages* (SI2002 / ST0270 / CM0081). The program is
+written in plain Python (standard library only: no parser generators and no
+library that computes FIRST/FOLLOW sets, LR automata or parsing tables). It reads
+a context-free grammar, computes `FIRST` and `FOLLOW`, decides whether the
+grammar is **LL(1)** and/or **SLR(1)**, parses strings with the corresponding
+algorithm, and evaluates a syntax-directed definition (SDD) on the parse tree
+using the dependency-graph method. Every algorithm follows Aho, Lam, Sethi and
+Ullman, *Compilers: Principles, Techniques, and Tools* (2nd edition):
 
-- **4.4.2** conjuntos `FIRST` y `FOLLOW` por punto fijo.
-- **4.4.3** definición de LL(1) y tabla predictiva `M[A, a]`.
-- **4.4.4** parser predictivo no recursivo con pila y árbol de análisis.
-- **4.6.2** ítems LR(0), `CLOSURE`, `GOTO` y colección canónica.
-- **4.6.4** tablas `ACTION` y `GOTO` de SLR(1) a partir de `FOLLOW`.
-- **4.6.3** parser LR (shift-reduce con pila de estados).
+| Part | Book |
+|---|---|
+| `FIRST` and `FOLLOW` by fixed point | 4.4.2 |
+| LL(1) definition and predictive table `M[A, a]` | 4.4.3 |
+| Table-driven predictive parser with a stack | 4.4.4 |
+| Shift-reduce parsing and conflicts | 4.5.4 |
+| LR(0) items, `CLOSURE`, `GOTO`, canonical collection | 4.6.2 |
+| `ACTION`/`GOTO` tables of SLR(1) from `FOLLOW` | 4.6.4 |
+| LR parsing algorithm | 4.6.3 |
+| Synthesized and inherited attributes, annotated parse trees | 5.1.1, 5.1.2 |
+| Dependency graphs and evaluation order | 5.2.1, 5.2.2 |
+| S-attributed and L-attributed definitions | 5.2.3, 5.2.4 |
 
-La gramática **no se transforma**: se prueba tal cual, con recursión por la
-izquierda incluida. Si es recursiva por la izquierda no será LL(1) y el
-programa lo reporta como tal.
+The grammar is **never transformed**: it is tested as written, left recursion
+included. If the grammar is left recursive it is not LL(1) and the program
+reports it that way.
 
-## Cómo se ejecuta
+## Group members
 
-No hay nada que instalar: Python 3 y listo.
+- Juan David Giraldo Regino
+- Camilo Andrés Rodríguez Agudelo
+- Daniel Rojas Grajales
+
+## Versions used
+
+- Operating system: Windows 11 with WSL2, Ubuntu 24.04.2 LTS (also run on Linux).
+- Programming language: Python 3. No third-party packages, only the standard
+  library. Tested with Python 3.13.5 and Python 3.12.3.
+- Other tools: Git 2.47.3. No parser generator, no parsing library, no build
+  step.
+
+## How to run
+
+Nothing to install: only Python 3 is needed.
 
 ```bash
-python3 main.py            # lee la gramática y decide LL(1) / SLR(1)
-python3 main.py --sets     # imprime FIRST y FOLLOW antes de decidir
-python3 tests/pruebas.py   # 64 pruebas con texto exacto
+cd lenguajes-formales
+python3 main.py            # reads the grammar, decides LL(1) / SLR(1)
+python3 main.py --sets     # prints FIRST and FOLLOW, then decides
+python3 tests/pruebas.py   # 90 tests, exact-text comparison
 ```
 
-La gramática se lee de la entrada estándar, en el formato de la sección 2.2 del
-enunciado:
+The grammar is read from standard input in the format of Section 2.2 of the
+assignment:
 
 ```
 3
@@ -37,55 +61,184 @@ A -> aA d
 B -> bBc e
 ```
 
-- La primera línea es el número de no terminales.
-- Cada línea es `A -> alternativa1 alternativa2 ...`; las alternativas van
-  separadas por espacios, así que `S -> AB` es **un** cuerpo de dos símbolos.
-- `e` es la cadena vacía (ε). El `$` de fin de entrada lo agrega el programa.
-- El símbolo inicial es siempre `S`.
+- The first line is the number of nonterminals.
+- Each following line is `A -> alternative1 alternative2 ...`; **alternatives are
+  separated by blanks**, so `S -> AB` is **one** body with two symbols and
+  `S -> A B` is two bodies (`A` and `B`). Symbols inside one alternative are
+  written together, with no blank in between.
+- `e` is the empty string (ε). The end marker `$` is added by the program.
+- The start symbol is always `S`.
 
-Después de la gramática viene el menú:
+After the grammar the program behaves according to the four cases of Section
+2.2.2. When the grammar is both LL(1) and SLR(1) it prints the menu
 
 ```
 Select a parser (T: for LL(1), B: for SLR(1), Q: quit):
 ```
 
-`T` parsea con LL(1), `B` con SLR(1) y `Q` termina. Las cadenas se escriben una
-por línea y una línea vacía cierra la lista. Si la gramática no es del tipo
-pedido, el programa avisa y no parsea.
+`T` parses with LL(1), `B` with SLR(1), `Q` ends the program. Strings are given
+one per line and an empty line closes the list; the empty string is written `e`.
+For each string the program prints `yes` or `no`.
 
-## Ejemplo
+### Example
 
 ```
-$ printf '2\nS -> aS b\nS -> e\nT\naabb\n\nQ\n' | python3 main.py
+$ printf '1\nS -> aSb e\nT\naabb\n\nQ\n' | python3 main.py
 Select a parser (T: for LL(1), B: for SLR(1), Q: quit):
 yes
 ```
 
-## Estructura
+(`1` is the number of nonterminals and both alternatives of `S` are written on
+its single line: `aSb` and `e`.)
+
+### Item 3: the SDD evaluator
+
+The SDD is defined for its own grammar, which is stored in
+`docs/gramatica_sdd.txt`:
 
 ```
-grammar.py        lectura de la gramática y utilidades (ε, $, lista de producciones)
-first_follow.py   FIRST y FOLLOW por punto fijo (4.4.2)
-ll1.py            tabla predictiva, detección de conflictos y parser con pila (4.4.3, 4.4.4)
-slr1.py           ítems LR(0), CLOSURE/GOTO, automáta, tablas y parser (4.6.2, 4.6.4, 4.6.3)
-main.py           entrada/salida, menú y árbol de análisis
-tests/pruebas.py  64 pruebas de texto exacto
-docs/             enunciado del curso y notas de trabajo
+3
+S -> N
+N -> DN e
+D -> 0 1 2 3 4 5 6 7 8 9
 ```
 
-## Decisiones de implementación
+It generates decimal numerals (leading zeros allowed) and the empty number, and
+the SDD computes the integer value of the numeral. The grammar is read from
+standard input like in Items 1 and 2, followed by the strings, so `--sdd` is used
+with the grammar file prepended to the strings:
 
-- Las alternativas repetidas se guardan una sola vez: una gramática es un
-  **conjunto** de producciones. Sin esto, `S -> a a` generaba dos índices
-  distintos para la misma producción y el programa reportaba falsos conflictos
-  LL(1) y reduce/reduce en SLR.
-- La producción aumentada `S' -> S` se agrega **al final** de la lista para no
-  renumerar las producciones originales.
-- En un reduce con cuerpo vacío (ε) se sacan **cero** estados de la pila: hay
-  una rama explícita para `len(cuerpo) == 0`, porque en Python
-  `del pila[-0:]` borra la pila entera.
-- `shift` solo se genera para terminales, `accept` solo con `$` para `S' -> S.`
-  y `GOTO` solo para no terminales.
+```bash
+# LL(1) parser: the grammar file, then the strings, then an empty line
+$ printf '101\n7\ne\n12x\n\n' | cat docs/gramatica_sdd.txt - | python3 main.py --sdd
 
-Ver `docs/NOTAS.md` para las indicaciones de trabajo que se acordaron durante
-el desarrollo.
+# SLR(1) parser instead of LL(1)
+$ printf '101\n\n' | cat docs/gramatica_sdd.txt - | python3 main.py --sdd --lr
+```
+
+For the string `7` the output is:
+
+```
+$ printf '7\n\n' | cat docs/gramatica_sdd.txt - | python3 main.py --sdd
+Annotated parse tree:
+S#1 [v=7]
+  N#2 [e=0, len=1, v=7]
+    D#3 [e=0, v=7]
+      7#4 [lexval=7]
+    N#5 [e=-1, len=0, v=0]
+Evaluation order:
+  7#4.lexval
+  D#3.v
+  N#5.len
+  N#2.len
+  N#2.e
+  D#3.e
+  N#5.e
+  N#5.v
+  N#2.v
+  S#1.v
+S#1.v = 7
+```
+
+For every string the output is:
+
+- `no` if the string is not generated by the grammar;
+- otherwise the annotated parse tree, one node per line, indented by depth. Each
+  node is labelled `symbol#number` (the number is the position of the node in
+  preorder) and lists its attributes in alphabetical order;
+- the evaluation order: one attribute per line, in the topological order of the
+  dependency graph;
+- the value of the main attribute of the start symbol, `S#1.v`.
+
+If the dependency graph has a cycle the program prints `SDD is circular: ...`
+with the attributes that form the cycle and stops, as required in Section 3,
+step 5. The circular SDD needed by step 6 of the guide is loaded with:
+
+```bash
+$ printf '101\n' | cat docs/gramatica_sdd.txt - | python3 main.py --sdd --circular
+SDD is circular: N#2.v -> D#3.e -> N#2.e -> N#2.v
+```
+
+Only one rule is changed: in `S -> N`, `N.e` is defined as `N.v` instead of
+`N.len - 1`, so the value of the number ends up depending on itself.
+
+## Repository layout
+
+```
+grammar.py            grammar reader and utilities (ε, $, numbered production list)
+first_follow.py       FIRST and FOLLOW by fixed point (4.4.2)
+ll1.py                predictive table, LL(1) test and stack parser (4.4.3, 4.4.4)
+slr1.py               LR(0) items, CLOSURE/GOTO, automaton, tables, LR parser (4.6.2, 4.6.4, 4.6.3)
+sdd.py                the SDD as data, dependency graph, topological order, cycle detection (5.1, 5.2)
+main.py               input/output, menu, and the modes --sets, --sdd, --sdd --lr, --sdd --circular
+tests/pruebas.py      90 exact-text tests
+docs/ENUNCIADO.md     assignment statement
+docs/CONTEXTO_LIBRO.md summary of sections 4.4 to 5.2 of the book
+docs/NOTAS.md         working notes and the traps we found (in Spanish)
+docs/gramatica_sdd.txt   grammar of Item 3
+docs/gramatica_ejemplo.txt  grammar used in the report for Items 1 and 2
+Informe_Lenguajes_Formales.pdf   the report (Item 4)
+Guia_Sustentacion.pdf   internal preparation of the oral presentation, not a required deliverable
+```
+
+## Implementation decisions
+
+- **Repeated alternatives are stored once**: a grammar is a *set* of
+  productions. Without this, `S -> a a` created two different indices for the
+  same production and the program reported false LL(1) conflicts and a false
+  reduce/reduce conflict in SLR.
+- **The augmented production `S' -> S` is appended at the end** of the
+  production list so the original indices do not change; those indices are the
+  identity of an LR(0) item and of a semantic rule.
+- **ε is stored as an empty tuple**, never as the character `'e'`. FIRST of
+  strings, the item `A -> ·` and the reduction of an empty body then need no
+  special case; it is written back as `e` when printing.
+- **A reduce by an empty body pops zero states**: there is an explicit branch for
+  `len(body) == 0`, because in Python `del stack[-0:]` deletes the whole stack.
+- **Deterministic state numbering**: the item sets are `frozenset`, whose
+  iteration order depends on hashing, so transitions are traversed with
+  `sorted()`; otherwise the automaton printed in the report would not match the
+  one the program builds.
+- **The parse tree is built by both parsers** (`ll1.Nodo`), so the SDD works
+  with either one, and the same string produces the same tree with LL(1) and with
+  SLR(1).
+- **The SDD is data, not code**: for each production there is a list of rules,
+  and each rule has the attribute it defines, the attributes it uses and the
+  function that computes it. The evaluator knows nothing about this particular
+  SDD. The rules are keyed by the production as written (head and body) and then
+  converted to production indices, so a rule cannot be attached to the wrong
+  production.
+- **No recursion over the tree or over the string**: all traversals use an
+  explicit stack. The Item 3 grammar is right recursive, so a long numeral
+  produces a very deep tree and Python recursion would fail.
+
+## Tests
+
+```bash
+python3 tests/pruebas.py
+```
+
+The 90 tests compare exact text: the four output cases of the assignment, the
+`--sets` output, the LL(1) tables, the SLR(1) tables and automaton sizes, the
+engines on several grammars, the SDD values, the annotated tree and evaluation
+order, the topological order itself, the cross-check between both parsers and the
+circular-SDD detection. The script prints `OK`/`FAIL` per test, a final count,
+and exits with code 1 if anything failed.
+
+## Use of AI tools
+
+Following Section 1 of the assignment, we declare the generative AI tools we
+used and what for:
+
+- **Claude (Anthropic)**: used as a reading aid to clarify concepts of Aho et
+  al. that we found difficult (fixed point of FIRST/FOLLOW, the difference
+  between S-attributed and L-attributed definitions, the direction of the edges
+  of the dependency graph). We checked every explanation against the book.
+- **Hermes Agent**: used as support for the code — locating bugs, reviewing the
+  implementation, and helping to draft this README and the report.
+
+We did not use AI tools to replace the reading of the book or the hand-worked
+examples: the FIRST/FOLLOW sets and tables in the report were computed by the
+program and verified by hand, and every member of the group can explain and
+modify the code during the oral presentation. No AI tool wrote any part of the
+program that we cannot account for line by line.
