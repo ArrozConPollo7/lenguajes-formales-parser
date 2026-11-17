@@ -92,13 +92,14 @@ Decisiones que hay que poder explicar en la sustentación.
 - **La gramática del ítem 3 se escribe `N -> DN e`**, no `N -> D N e`: el espacio
   separa alternativas, así que la segunda forma son tres producciones (`D`, `N`,
   `e`) y la gramática deja de ser LL(1): los conflictos aparecen en `M[N, a]`.
-- **La SDD no es L-atribuida.** En `S -> N`, la regla `N.e = N.len - 1` define un
-  atributo heredado con un sintetizado del mismo símbolo. Heredar con atributos
-  del propio símbolo está permitido en general (5.1, pp. 304-305: un heredado de
-  B puede usar atributos de la cabeza, de los hermanos y del propio B), pero la
-  definición L-atribuida (5.2.4, pp. 313-314) lo prohíbe, y por eso es justamente
-  el argumento de por qué se usa el método general del grafo: ninguna pasada
-  única sobre el árbol evalúa esta SDD.
+- **La SDD es L-atribuida, no S-atribuida.** En `S -> N`, la regla
+  `N.e = N.len - 1` define un heredado con un sintetizado del mismo símbolo; la
+  5.2.4 (pp. 313-314) lo permite en su cláusula (c) siempre que los atributos de
+  ese símbolo no formen un ciclo entre sí, y aquí `len` no depende de `e`. Lo que
+  rompería la clase es el Ejemplo 5.9 del libro: un heredado definido con un
+  hermano de la DERECHA. Aun siendo L-atribuida hay que usar el método general
+  (el enunciado lo exige igual) y además hace falta, porque `N.len -> N.e` va
+  hacia arriba dentro del mismo nodo: una sola pasada no alcanza.
 - **«El símbolo inicial no tiene heredados» es del enunciado**, no del libro: el
   libro no impone esa restricción. Se cumple aquí porque `S` solo tiene `v`, pero
   conviene no atribuírselo a Aho et al.

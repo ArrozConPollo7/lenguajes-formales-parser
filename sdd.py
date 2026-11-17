@@ -18,9 +18,16 @@ Que atributos puede usar cada clase (5.1, libro pp. 304-305): un atributo
 sintetizado de A puede usar atributos de los hijos y atributos (heredados
 incluidos) del propio nodo A; un atributo heredado de B puede usar atributos de
 la cabeza (padre), de los hermanos y del propio B. La definicion L-atribuida
-(5.2.4) es mas estricta: prohibe que un heredado de Xi use atributos del propio
-Xi. El enunciado agrega una regla suya, que no viene del libro: el simbolo
-inicial no lleva atributos heredados.
+(5.2.4, pp. 313-314) permite que un heredado de Xi use: (a) heredados de la
+cabeza, (b) atributos de los simbolos a la izquierda de Xi y (c) atributos del
+propio Xi, siempre que no formen un ciclo entre ellos.
+
+Clasificacion de esta SDD: es L-ATRIBUIDA y no S-atribuida (tiene heredados).
+El unico punto delicado es S -> N, donde N.e (heredado) usa N.len (sintetizado
+del propio N): la clausula (c) lo permite porque len no depende de e. El ejemplo
+5.9 del libro (un heredado definido con un hermano de la DERECHA) es el que si
+romperia la clase. El enunciado agrega una regla suya, que no viene del libro: el
+simbolo inicial no lleva atributos heredados.
 
 La SDD es DATOS, no codigo: el evaluador (grafo + orden topologico + llamado de
 las funciones) no sabe nada de esta gramatica ni de estos atributos. Cambiar la
@@ -39,9 +46,10 @@ Idea de la SDD: el valor de un digito depende del lugar que ocupa, y el lugar se
 cuenta desde la DERECHA (unidades = 10^0). Por eso el exponente se hereda de
 izquierda a derecha, pero la raiz solo puede saber el exponente del primer digito
 cuando ya conoce la LONGITUD del numero: esa longitud se sintetiza de derecha a
-izquierda. Es el caso tipico de una SDD que no es L-atribuida (Seccion 5.2.4) y
-que por eso mismo obliga al metodo general del grafo de dependencias: ninguna
-pasada unica (ni postorden ni preorden) puede calcularla.
+izquierda. Esa dependencia (N.len -> N.e) es la que hace que una sola pasada
+sobre el arbol no alcance: hay que calcular la longitud de abajo hacia arriba y
+despues bajar el exponente. El grafo de dependencias resuelve el orden solo, y
+el enunciado pide el metodo general en todo caso.
 """
 
 import grammar
@@ -128,9 +136,10 @@ def valor_con_digito(valor_del_digito_actual, exponente, valor_del_resto):
 REGLAS = {
     # S -> N : el exponente del primer digito sale de la longitud de N, y el
     # valor del numero sube tal cual al simbolo inicial.
-    # Ojo: N.e es heredado y usa N.len, un sintetizado del propio N. La seccion
-    # 5.1 lo permite (un heredado de B puede usar atributos del propio B), pero
-    # la 5.2.4 lo prohibe: por eso esta SDD no es L-atribuida.
+    # Ojo: N.e es heredado y usa N.len, un sintetizado del propio N. Lo permiten
+    # la 5.1 y la clausula (c) de la 5.2.4 (atributos del propio simbolo sin
+    # ciclos entre ellos), asi que la SDD es L-atribuida; lo que no permite es
+    # resolverla con una sola pasada. Ver el docstring del modulo.
     ('S', ('N',)): [
         {'define': (1, 'e'), 'usa': [(1, 'len')], 'funcion': exponente_del_primero},
         {'define': (0, 'v'), 'usa': [(1, 'v')], 'funcion': identidad},

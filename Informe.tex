@@ -404,6 +404,13 @@ nonterminal \nt{N}, and it is not a grammar of the book or of the assignment: in
 desk-calculator examples, the value of a numeral is computed from the \emph{position} of each digit,
 which needs an inherited attribute because the position is counted from the right.
 
+On condition G3, the closest idea in the book is Exercise~5.2.4, which asks the reader to design an
+L-attributed SDD for binary numerals with a decimal point; that is an exercise without a solution in
+the text, and our grammar and our SDD are both different: the grammar is decimal, allows
+$\varepsilon$ and leading zeros and has no fractional part, and the SDD computes not only the value
+but also the length of the numeral, from which the exponent of each digit is derived --- which is
+precisely the dependency $N.len \to N.e$ that a simpler scheme for the same idea does not have.
+
 \begin{lstlisting}[style=codigo]
 3
 S -> N
@@ -493,7 +500,8 @@ defined (Section 5.2.1). The graph of this tree has 28 vertices and no cycle
 \includegraphics[width=0.72\textwidth]{figuras/grafo.png}
 \caption{Dependency graph of the tree of \nt{1207}, drawn in layers: every arrow goes from an
 attribute to one in a lower layer, so the layers are a topological order. Vertex \attr{N\#2.e}
-depends on \attr{N\#2.len}, which is what makes the SDD non-L-attributed (Section 4.5).}
+depends on \attr{N\#2.len}: that edge goes up inside one node and is the reason a single pass
+cannot evaluate the tree (Section 4.5).}
 \label{fig:grafo}
 \end{figure}
 
@@ -533,24 +541,30 @@ tree produces this order, and that is why the method of the book is needed.
 
 \subsection{Step 4: classification of the SDD}
 
-The SDD is \textbf{neither S-attributed nor L-attributed}.
+The SDD is \textbf{L-attributed but not S-attributed}.
 
 \begin{itemize}[leftmargin=1.1em,itemsep=2pt]
-\item \textbf{Not S-attributed} (Section 5.2.3): an S-attributed definition uses only synthesized
-attributes, and this one has two inherited attributes, \attr{N.e} and \attr{D.e}.
-\item \textbf{Not L-attributed} (Section 5.2.4): in an L-attributed definition, for a production
-$A \to X_1\cdots X_n$, every inherited attribute of $X_j$ may depend only on inherited attributes of
-$A$ and on attributes of $X_1\cdots X_{j-1}$. In $S \to N$ the rule $N.e = N.len - 1$ defines an
-inherited attribute of $X_1$ using $N.len$, a synthesized attribute of $X_1$ itself, and there is no
-$X_0$. The definition therefore violates the condition.
+\item \textbf{Not S-attributed} (Section 5.2.3, p.~313): an SDD is S-attributed if \emph{every}
+attribute is synthesized, and this one has two inherited attributes, \attr{N.e} and \attr{D.e}.
+\item \textbf{L-attributed} (Section 5.2.4, pp.~313--314): every rule is either synthesized --- and a
+synthesized attribute of the head may use any attribute of the production, inherited ones included
+(Section 5.1.1, pp.~304--305) --- or it defines an inherited attribute of a symbol of the body using
+only what the definition allows: inherited attributes of the head ($D.e = N.e$ and $N_1.e = N.e - 1$
+in $N \to D\,N_1$), or, in $S \to N$, attributes of that same occurrence of $N$, which is
+clause~(c) of the definition ($N.e$ uses $N.len$) and is legal as long as the attributes of $N$ alone
+do not form a cycle. Here $N.len$ does not depend on $N.e$, so there is no cycle, and the SDD stays
+inside the class. The book's Example~5.9 is the case that would break it: an inherited attribute
+defined from a \emph{right} sibling.
 \end{itemize}
 
-The consequence is the reason the assignment asks for the general method: a single left-to-right
-walk that computes synthesized attributes on the way back cannot evaluate this tree, because to know
-the exponent of the first digit the walk needs the length of the whole numeral (bottom-up) and to
-know the length it does not need any inherited attribute (top-down); the two directions interleave.
-The evaluator never assumes an order: it builds the graph and asks for a topological order, so it
-works for this SDD and for any other, as long as it is not circular.
+Being L-attributed does not remove the need for the general method, and the assignment asks for it in
+any case (``even if it is L-attributed, you must still implement the general method''). With this
+SDD a single depth-first pass is not enough on its own, because the dependency
+$N.len \to N.e$ goes \emph{up} inside one node: the exponent of the first digit can only be known
+after the length of the whole subtree has been computed on the way back, and the length does not
+depend on the exponent. The length must be computed bottom-up and the exponent then passed top-down:
+two passes over that subtree. The evaluator never assumes an order: it builds the graph and asks for
+a topological order, so it works for this SDD and for any other non-circular one.
 
 \subsection{Step 5: the evaluator}
 
@@ -684,8 +698,10 @@ stack is \nt{\$} \emph{and} the current input symbol is \nt{\$}, and the test su
 The three items are implemented from the algorithms of the book, without transformations of the
 input grammar and without external libraries, and they agree with each other: the same grammar that
 FIRST/FOLLOW analyses is the one the two parsers accept, the two parsers build the same tree, and the
-SDD is evaluated on that tree. The SDD of Item 3 is not S-attributed and not L-attributed, which
-forced us to implement the general dependency-graph method instead of a fixed-order traversal, and
+SDD is evaluated on that tree. The SDD of Item 3 is L-attributed but not S-attributed; one of its
+inherited attributes depends on a synthesized attribute of the same symbol, so it cannot be evaluated
+in a single pass with a fixed order, and we implemented the general dependency-graph method (which the
+assignment requires in any case). The evaluator also
 the evaluator detects circular definitions and reports the cycle instead of looping. The 93 tests of
 the suite compare exact output, so a change in the format, in the tables or in the evaluation order
 is caught immediately.

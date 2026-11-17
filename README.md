@@ -224,8 +224,12 @@ program's own output.
 - **Attribute dependencies follow 5.1 (pp. 304-305)**: a synthesized attribute of
   `A` may use attributes of the children and of `A` itself, inherited ones
   included; an inherited attribute of `B` may use attributes of the head, of the
-  siblings and of `B` itself. The stricter L-attributed condition of 5.2.4 is only
-  used to classify the SDD, not to restrict the evaluator. The rule "the start
+  siblings and of `B` itself. The SDD of Item 3 is **L-attributed but not
+  S-attributed**: in `S -> N` the inherited `N.e` is defined from `N.len`, a
+  synthesized attribute of the same symbol, which clause (c) of 5.2.4 allows as
+  long as those attributes do not form a cycle (here `len` does not depend on
+  `e`). It is still evaluated with the general method, because `N.len -> N.e`
+  goes up inside one node and a single pass cannot compute it. The rule "the start
   symbol has no inherited attributes" comes from the assignment, not from the
   book.
 
