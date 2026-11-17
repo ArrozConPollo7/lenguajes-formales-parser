@@ -591,12 +591,38 @@ order and the value of \attr{S.v}.
 
 The evaluator is run from the same entry point as the parsers: the grammar of Item 3 is read in the
 format of Section 2.2 from the standard input, followed by the strings, and \nt{-{}-sdd} selects the
-SDD mode (\nt{-{}-lr} builds the tree with the SLR(1) parser instead of the LL(1) one).
+SDD mode (\nt{-{}-lr} builds the tree with the SLR(1) parser instead of the LL(1) one):
 
 \begin{lstlisting}[style=consola]
 $ printf '1207\n\n' | cat docs/gramatica_sdd.txt - | python3 main.py --sdd
 $ printf '1207\n\n' | cat docs/gramatica_sdd.txt - | python3 main.py --sdd --circular
 \end{lstlisting}
+
+\subsection{The optional visualizer}
+
+The assignment welcomes an interactive visualizer (Section 3, step 5). \nt{visualizador.py} is a
+client of the modules above: it computes nothing, it only draws what they return, so the algorithms
+live in one place and \nt{main.py} still produces the exact output required by Section 2.2.2. It
+uses only the standard library (an \nt{http.server} that serves pages whose SVG is generated in
+Python), so it needs no installation and no network access.
+
+It has four views, in the order in which the work is presented: the FIRST/FOLLOW sets with the cells
+each production fills (Section 4.4.2); the predictive table with its conflicting cells and the
+ACTION/GOTO tables (4.4.3, 4.6.4); the trace of the parser, one configuration per step (4.4.4,
+4.6.3); and the SDD, which is the one the guide suggests: the annotated tree, the dependency graph
+and the evaluation order, advancing one attribute at a time (5.2.1, 5.2.2). Every view is a URL, so
+the state of the explanation can be reproduced exactly (\nt{/sdd?cadena=12\&paso=5}). Figure~3 shows
+the SDD view in the middle of the evaluation: the attributes already computed are green, the one of
+the current step is highlighted, and the pending ones are printed as ``$\cdot$''.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=5.75in]{figuras/visualizador.png}
+\caption{The optional visualizer showing the evaluation of the SDD for the numeral \nt{12} at step 5
+of 16: the tree with the attributes computed so far, the dependency graph with the same information
+and the evaluation order at the bottom.}
+\label{fig:visualizador}
+\end{figure}
 
 \subsection{Step 6: tests of the evaluator}
 

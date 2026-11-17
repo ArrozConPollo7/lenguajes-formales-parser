@@ -162,6 +162,30 @@ SDD is circular: N#2.v -> D#3.e -> N#2.e -> N#2.v
 Only one rule is changed: in `S -> N`, `N.e` is defined as `N.v` instead of
 `N.len - 1`, so the value of the number ends up depending on itself.
 
+### Optional visualizer
+
+`visualizador.py` is a client of the modules above: it computes nothing, it only draws what
+`first_follow`, `ll1`, `slr1` and `sdd` return. It uses only the standard library (an
+`http.server` whose pages contain SVG generated in Python), so there is nothing to install and no
+network access is needed.
+
+```bash
+python3 visualizador.py             # serves http://127.0.0.1:8000
+python3 visualizador.py --puerto 8100
+python3 visualizador.py --gramatica docs/gramatica_ejemplo.txt   # one grammar for every view
+python3 visualizador.py --check     # draws every view without a browser (quick test)
+```
+
+It has four views, in the order of the presentation: the FIRST/FOLLOW sets with the cells each
+production fills; the predictive table with its conflicting cells and the ACTION/GOTO tables; the
+trace of the parser, one configuration per step; and the SDD, with the annotated tree, the
+dependency graph and the evaluation order advancing one attribute at a time (the visualizer that
+Section 3 of the assignment suggests). Every view is a URL, so any step of the explanation can be
+reproduced exactly, for example `/sdd?cadena=12&paso=5`.
+
+The visualizer does not change the behaviour of `main.py`: the output required by the assignment is
+still produced by `python3 main.py`, as described above.
+
 ## Repository layout
 
 ```
@@ -171,6 +195,7 @@ ll1.py                predictive table, LL(1) test and stack parser (4.4.3, 4.4.
 slr1.py               LR(0) items, CLOSURE/GOTO, automaton, tables, LR parser (4.6.2, 4.6.4, 4.6.3)
 sdd.py                the SDD as data, dependency graph, topological order, cycle detection (5.1, 5.2)
 main.py               input/output, menu, and the modes --sets, --sdd, --sdd --lr, --sdd --circular
+visualizador.py       optional visualizer: four views served from the standard library (client only)
 tests/pruebas.py      93 exact-text tests
 docs/ENUNCIADO.md     assignment statement
 docs/CONTEXTO_LIBRO.md summary of sections 4.4 to 5.2 of the book
@@ -179,7 +204,7 @@ docs/gramatica_sdd.txt   grammar of Item 3
 docs/gramatica_ejemplo.txt  grammar used in the report for Items 1 and 2
 Informe_Lenguajes_Formales.pdf   the report (Item 4), generated from Informe.tex
 Informe.tex           LaTeX source of the report (optional in the submission)
-figuras/              the two figures used by Informe.tex (annotated tree, dependency graph)
+figuras/              the figures used by Informe.tex (annotated tree, dependency graph, visualizer)
 ```
 
 The report is written in LaTeX and compiled with `tectonic Informe.tex` (or
