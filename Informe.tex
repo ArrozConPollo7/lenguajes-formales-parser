@@ -1,4 +1,4 @@
-% Project report — Formal Languages (SI2002 / ST0270 / CM0081)
+% Project report — Lenguajes Formales (SI2002)
 % Compile with:  pdflatex Informe.tex   (twice)   or   tectonic -X compile Informe.tex
 % Figures are in figuras/; the grammars are in docs/.
 \documentclass[11pt,letterpaper]{article}
@@ -44,8 +44,8 @@
 
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\footnotesize Formal Languages --- Project report}
-\fancyhead[R]{\footnotesize SI2002 / ST0270 / CM0081}
+\fancyhead[L]{\footnotesize Lenguajes Formales --- Project report}
+\fancyhead[R]{\footnotesize SI2002}
 \fancyfoot[C]{\footnotesize \thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
@@ -60,7 +60,7 @@
 \large FIRST and FOLLOW sets, LL(1) and SLR(1) parsers,\\
 \large and evaluation of a syntax-directed definition}
 \author{Juan David Giraldo Regino \and Camilo Andrés Rodríguez Agudelo \and Daniel Rojas Grajales}
-\date{Formal Languages --- SI2002 / ST0270 Formal Languages and Compilers / CM0081\\ November 2026}
+\date{Lenguajes Formales (SI2002)\\ November 2026}
 
 \begin{document}
 
@@ -79,11 +79,11 @@ and evaluation of a syntax-directed definition}\\[12pt]
 \large Daniel Rojas Grajales
 \end{tabular}
 
-\vspace{1.6cm}
-Formal Languages --- SI2002 / ST0270 Formal Languages and Compilers /\\
-CM0081 Formal Languages and Automata
+\vspace{1.5cm}
+{\large Lenguajes Formales (SI2002)}\\[6pt]
+{Professor: C\'esar Augusto Guerra Villa}
 
-\vspace{1.4cm}
+\vspace{1.3cm}
 November 2026
 
 \vfill
@@ -678,7 +678,7 @@ found difficult --- the fixed point of FIRST and FOLLOW, the difference between 
 L-attributed definitions, and the direction of the edges of the dependency graph. Every explanation
 was checked against Aho et al. and against the program.
 \item \textbf{Hermes Agent}: used as support for the code --- locating bugs, reviewing the
-implementation, and drafting the README, this report and the guide of the presentation.
+implementation, and drafting the README and this report.
 \end{itemize}
 
 The optional visualizer of Section~4.7 deserves a separate sentence, because it was written with the
@@ -697,8 +697,7 @@ of Sections 4.4, 4.6, 5.1 and 5.2, and it is what the 93 tests check. Deleting
 Section~2.2.2 and the test suite still passes.
 
 None of us used AI tools to replace the reading of the book or the hand-worked examples: the sets and
-the tables of this report were computed by the program and verified by hand, and every member of the
-group can explain and modify the code during the presentation.
+the tables of this report were computed by the program and verified by hand.
 
 \section{Problems found and how we solved them}
 
@@ -760,16 +759,14 @@ FIRST/FOLLOW analyses is the one the two parsers accept, the two parsers build t
 SDD is evaluated on that tree. The SDD of Item 3 is L-attributed but not S-attributed; one of its
 inherited attributes depends on a synthesized attribute of the same symbol, so it cannot be evaluated
 in a single pass with a fixed order, and we implemented the general dependency-graph method (which the
-assignment requires in any case). The evaluator also
-the evaluator detects circular definitions and reports the cycle instead of looping. The 93 tests of
+assignment requires in any case). The evaluator also detects circular definitions and reports the
+cycle instead of looping. The 93 tests of
 the suite compare exact output, so a change in the format, in the tables or in the evaluation order
 is caught immediately.
 
 \begin{thebibliography}{9}
 \bibitem{aho} Aho, A. V., Lam, M. S., Sethi, R., Ullman, J. D. \emph{Compilers: Principles,
 Techniques, and Tools}, 2nd edition. Addison-Wesley, 2006. Sections 4.4, 4.5, 4.6, 5.1 and 5.2.
-\bibitem{enunciado} Course assignment statement, SI2002 / ST0270 / CM0081 Formal Languages,
-October 2026 (file \nt{docs/ENUNCIADO.md}).
 \end{thebibliography}
 
 \end{document}
