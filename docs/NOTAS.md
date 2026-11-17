@@ -58,6 +58,15 @@ mensaje de bienvenida, un *prompt* o una línea en blanco, las pruebas fallan.
 - **`parsear_ll1` no valida la tabla.** Con una tabla conflictiva y recursión
   por la izquierda no terminaría; `main` solo llama al parser cuando la
   gramática ya pasó la comprobación de LL(1).
+- **Errata del Algoritmo 4.31 (libro p. 224).** El paso 1 impreso dice
+  `FIRST(A)`; en realidad es `FIRST(α)`, el FIRST del cuerpo, como muestra el
+  Ejemplo 4.32. `construir_tabla` usa `first_de_cadena(cuerpo, first)`, que es
+  la versión correcta; no "corregir" el código para seguir el texto impreso.
+- **Aceptación en el parser predictivo (Algoritmo 4.34, Fig. 4.20, pp. 226-227).**
+  El bucle del libro termina cuando el tope es `$` y **no** vuelve a mirar la
+  entrada, así que aceptaría `aa` con `S -> a`. Aquí se acepta solo si la pila
+  quedó en `$` **y** el símbolo actual de la entrada es `$`; si sobran símbolos,
+  se rechaza (la traza lo marca como «error: sobran simbolos»).
 
 ## Ítem 3: la SDD y su evaluador
 
@@ -84,16 +93,22 @@ Decisiones que hay que poder explicar en la sustentación.
   separa alternativas, así que la segunda forma son tres producciones (`D`, `N`,
   `e`) y la gramática deja de ser LL(1): los conflictos aparecen en `M[N, a]`.
 - **La SDD no es L-atribuida.** En `S -> N`, la regla `N.e = N.len - 1` define un
-  atributo heredado con un sintetizado del mismo símbolo. Eso viola la Sección
-  5.2.4 y es justamente el argumento de por qué se usa el método general del
-  grafo: ninguna pasada única sobre el árbol evalúa esta SDD.
+  atributo heredado con un sintetizado del mismo símbolo. Heredar con atributos
+  del propio símbolo está permitido en general (5.1, pp. 304-305: un heredado de
+  B puede usar atributos de la cabeza, de los hermanos y del propio B), pero la
+  definición L-atribuida (5.2.4, pp. 313-314) lo prohíbe, y por eso es justamente
+  el argumento de por qué se usa el método general del grafo: ninguna pasada
+  única sobre el árbol evalúa esta SDD.
+- **«El símbolo inicial no tiene heredados» es del enunciado**, no del libro: el
+  libro no impone esa restricción. Se cumple aquí porque `S` solo tiene `v`, pero
+  conviene no atribuírselo a Aho et al.
 - **Salida del ítem 3**: por cada cadena aceptada, el árbol anotado (una línea por
   nodo, `simbolo#numero` y atributos en orden alfabético), el orden de evaluación
   y `S#1.v = valor`. Si la cadena no pertenece al lenguaje, solo `no`.
 
 ## Verificación
 
-Las 90 pruebas se corren desde la raíz del proyecto y comparan la salida exacta
+Las 93 pruebas se corren desde la raíz del proyecto y comparan la salida exacta
 de los cuatro casos del enunciado, los conjuntos de `FIRST`/`FOLLOW`, los
 parsers, el árbol anotado del ítem 3, el orden topológico, la detección de la SDD
 circular y el cruce entre los dos parsers:

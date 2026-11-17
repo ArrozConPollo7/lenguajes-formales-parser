@@ -11,16 +11,16 @@ Ullman, *Compilers: Principles, Techniques, and Tools* (2nd edition):
 
 | Part | Book |
 |---|---|
-| `FIRST` and `FOLLOW` by fixed point | 4.4.2 |
-| LL(1) definition and predictive table `M[A, a]` | 4.4.3 |
-| Table-driven predictive parser with a stack | 4.4.4 |
+| `FIRST` and `FOLLOW` by fixed point | 4.4.2, pp. 220-222 |
+| LL(1) definition and predictive table `M[A, a]` | 4.4.3, Algorithm 4.31, p. 224 |
+| Table-driven predictive parser with a stack | 4.4.4, Algorithm 4.34 and Fig. 4.20, pp. 226-227 |
 | Shift-reduce parsing and conflicts | 4.5.4 |
-| LR(0) items, `CLOSURE`, `GOTO`, canonical collection | 4.6.2 |
-| `ACTION`/`GOTO` tables of SLR(1) from `FOLLOW` | 4.6.4 |
-| LR parsing algorithm | 4.6.3 |
-| Synthesized and inherited attributes, annotated parse trees | 5.1.1, 5.1.2 |
-| Dependency graphs and evaluation order | 5.2.1, 5.2.2 |
-| S-attributed and L-attributed definitions | 5.2.3, 5.2.4 |
+| LR(0) items, `CLOSURE`, `GOTO`, canonical collection | 4.6.2, Fig. 4.32 and Fig. 4.33, pp. 242-246 |
+| `ACTION`/`GOTO` tables of SLR(1) from `FOLLOW` | 4.6.4, Algorithm 4.46, pp. 253-254 |
+| LR parsing algorithm | 4.6.3, Algorithm 4.44 and Fig. 4.36, pp. 250-251 |
+| Synthesized and inherited attributes, annotated parse trees | 5.1.1, 5.1.2, pp. 304-305 |
+| Dependency graphs and evaluation order | 5.2.1, pp. 310-311; 5.2.2, p. 312 |
+| S-attributed and L-attributed definitions | 5.2.3, pp. 312-313; 5.2.4, pp. 313-314 |
 
 The grammar is **never transformed**: it is tested as written, left recursion
 included. If the grammar is left recursive it is not LL(1) and the program
@@ -48,7 +48,7 @@ Nothing to install: only Python 3 is needed.
 cd lenguajes-formales
 python3 main.py            # reads the grammar, decides LL(1) / SLR(1)
 python3 main.py --sets     # prints FIRST and FOLLOW, then decides
-python3 tests/pruebas.py   # 90 tests, exact-text comparison
+python3 tests/pruebas.py   # 93 tests, exact-text comparison
 ```
 
 The grammar is read from standard input in the format of Section 2.2 of the
@@ -171,15 +171,20 @@ ll1.py                predictive table, LL(1) test and stack parser (4.4.3, 4.4.
 slr1.py               LR(0) items, CLOSURE/GOTO, automaton, tables, LR parser (4.6.2, 4.6.4, 4.6.3)
 sdd.py                the SDD as data, dependency graph, topological order, cycle detection (5.1, 5.2)
 main.py               input/output, menu, and the modes --sets, --sdd, --sdd --lr, --sdd --circular
-tests/pruebas.py      90 exact-text tests
+tests/pruebas.py      93 exact-text tests
 docs/ENUNCIADO.md     assignment statement
 docs/CONTEXTO_LIBRO.md summary of sections 4.4 to 5.2 of the book
 docs/NOTAS.md         working notes and the traps we found (in Spanish)
 docs/gramatica_sdd.txt   grammar of Item 3
 docs/gramatica_ejemplo.txt  grammar used in the report for Items 1 and 2
-Informe_Lenguajes_Formales.pdf   the report (Item 4)
-Guia_Sustentacion.pdf   internal preparation of the oral presentation, not a required deliverable
+Informe_Lenguajes_Formales.pdf   the report (Item 4), generated from Informe.tex
+Informe.tex           LaTeX source of the report (optional in the submission)
+figuras/              the two figures used by Informe.tex (annotated tree, dependency graph)
 ```
+
+The report is written in LaTeX and compiled with `tectonic Informe.tex` (or
+`pdflatex Informe.tex` twice); the figures are PNG files generated from the
+program's own output.
 
 ## Implementation decisions
 
@@ -211,6 +216,18 @@ Guia_Sustentacion.pdf   internal preparation of the oral presentation, not a req
 - **No recursion over the tree or over the string**: all traversals use an
   explicit stack. The Item 3 grammar is right recursive, so a long numeral
   produces a very deep tree and Python recursion would fail.
+- **The predictive parser checks both ends (Algorithm 4.34, pp. 226-227)**: the
+  book's loop stops as soon as the top of the stack is `$` and never looks at the
+  input again, so it accepts `aa` with the grammar `S -> a`. Here the parse is
+  accepted only if the stack is `$` **and** the current input symbol is `$`;
+  otherwise the string is rejected as having symbols left over.
+- **Attribute dependencies follow 5.1 (pp. 304-305)**: a synthesized attribute of
+  `A` may use attributes of the children and of `A` itself, inherited ones
+  included; an inherited attribute of `B` may use attributes of the head, of the
+  siblings and of `B` itself. The stricter L-attributed condition of 5.2.4 is only
+  used to classify the SDD, not to restrict the evaluator. The rule "the start
+  symbol has no inherited attributes" comes from the assignment, not from the
+  book.
 
 ## Tests
 
@@ -218,7 +235,7 @@ Guia_Sustentacion.pdf   internal preparation of the oral presentation, not a req
 python3 tests/pruebas.py
 ```
 
-The 90 tests compare exact text: the four output cases of the assignment, the
+The 93 tests compare exact text: the four output cases of the assignment, the
 `--sets` output, the LL(1) tables, the SLR(1) tables and automaton sizes, the
 engines on several grammars, the SDD values, the annotated tree and evaluation
 order, the topological order itself, the cross-check between both parsers and the

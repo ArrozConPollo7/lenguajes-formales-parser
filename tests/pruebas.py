@@ -202,6 +202,20 @@ def pruebas_item_2_ll1():
     comprobar('LL(1) a', acepta_ll1(EJEMPLO_2, 'a'), False)
     comprobar('LL(1) simbolo ajeno', acepta_ll1(EJEMPLO_2, 'z'), False)
 
+    # Aceptacion estricta (Algoritmo 4.34 y Fig. 4.20, pp. 226-227): el bucle
+    # del libro termina cuando el tope es '$' sin volver a mirar la entrada, asi
+    # que aceptaria 'aa' con S -> a. Aqui se exige tambien que el simbolo actual
+    # sea '$': si sobran simbolos, la cadena se rechaza.
+    g_corta, first_corta, follow_corta = preparar('1\nS -> a\n')
+    tabla_corta, conflictos_corta = ll1.construir_tabla(g_corta, first_corta, follow_corta)
+    comprobar('gramatica corta es LL(1)', ll1.es_ll1(conflictos_corta), True)
+    comprobar('accept exige entrada en $',
+              [ll1.parsear_ll1(g_corta, tabla_corta, cadena)[0] for cadena in ('a', 'aa')],
+              [True, False])
+    traza_sobra = []
+    ll1.parsear_ll1(g_corta, tabla_corta, 'aa', traza_sobra)
+    comprobar('traza de sobran simbolos', traza_sobra[-1][2], 'error: sobran simbolos')
+
     # Arbol de 'd': S -> AB, A -> d, B -> e. El nodo de B existe y no tiene hijos:
     # eso es lo que despues necesita el SDD para instanciar reglas epsilon.
     g, first, follow = preparar(EJEMPLO_2)

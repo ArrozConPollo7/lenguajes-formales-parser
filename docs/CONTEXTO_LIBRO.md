@@ -28,6 +28,8 @@ Nunca contiene ε. Reglas (repetir hasta punto fijo):
 2. Si hay producción A → α B β: agregar FIRST(β) menos ε a FOLLOW(B).
 3. Si hay A → α B, o A → α B β con ε ∈ FIRST(β): agregar FOLLOW(A) a FOLLOW(B).
 
+*Referencia (informe): libro pp. 220-222.*
+
 ---
 
 ## 4.4.3 Gramáticas LL(1) y tabla predictiva
@@ -37,10 +39,16 @@ Nunca contiene ε. Reglas (repetir hasta punto fijo):
 2. Si ε ∈ FIRST(α): para cada b en FOLLOW(A) (incluye `$`): M[A, b] = A → α.
 Las celdas sin producción son error.
 
+**Algoritmo 4.31 (libro p. 224).**
+Nota: el texto impreso del paso 1 dice FIRST(A); es una errata, lo correcto es FIRST(α), como
+muestra el Ejemplo 4.32.
+
 **Prueba de LL(1)**: la gramática es LL(1) si y solo si ninguna celda de M recibe dos producciones distintas.
 (Equivale a: para A → α | β, FIRST(α) y FIRST(β) disjuntos; a lo sumo uno deriva ε, y si β ⇒* ε entonces
 FIRST(α) ∩ FOLLOW(A) = ∅.) Se debe probar sobre la gramática tal cual, sin quitar recursión izquierda.
 Una gramática recursiva por la izquierda o ambigua nunca es LL(1).
+
+*Referencia (informe): Algoritmo 4.31, libro p. 224.*
 
 ## 4.4.4 Parser predictivo no recursivo (con pila)
 
@@ -52,6 +60,12 @@ Una gramática recursiva por la izquierda o ambigua nunca es LL(1).
   - Si M[X, a] = X → Y1 Y2 ... Yk: sacar X y apilar Yk, ..., Y1 (Y1 queda arriba). Si la producción es X → ε, solo sacar X.
 - Acepta si termina con pila = `$` y entrada = `$`.
 - Para el SDD se puede construir el árbol de parseo al aplicar cada producción.
+
+**Algoritmo 4.34 / Fig. 4.20 (libro pp. 226-227).** El bucle del libro
+termina cuando X = `$` pero NO verifica que la entrada esté en `$`. El código debe aceptar solo si
+la pila quedó en `$` Y el símbolo actual de la entrada es `$`; si no, rechazar.
+
+*Referencia (informe): Algoritmo 4.34 y Fig. 4.20, libro pp. 226-227.*
 
 ---
 
@@ -74,6 +88,8 @@ Conflictos (4.5.4): **shift/reduce** y **reduce/reduce**. Si la tabla los tiene,
 - **Colección canónica**: I0 = CLOSURE({S' → ·S}). Repetir: para cada conjunto I y cada símbolo X (terminal o no
   terminal) tal que GOTO(I, X) no sea vacío y sea nuevo, agregarlo. Cada conjunto es un estado del autómata.
 
+*Referencia (informe): Fig. 4.32 (CLOSURE) y Fig. 4.33 (items(G')), libro pp. 242-246.*
+
 ## 4.6.4 Tabla SLR(1)
 
 Para cada estado i (conjunto Ii):
@@ -84,6 +100,8 @@ Para cada estado i (conjunto Ii):
 Lo demás es error. Estado inicial = el que contiene S' → ·S.
 **La gramática es SLR(1) si y solo si no hay celdas con dos acciones distintas** (conflictos).
 
+*Referencia (informe): Algoritmo 4.46, libro pp. 253-254.*
+
 ## 4.6.3 Algoritmo de parsing LR
 
 - Pila de estados, inicialmente [0]. Entrada w$.
@@ -93,16 +111,22 @@ Lo demás es error. Estado inicial = el que contiene S' → ·S.
     (para el árbol: crear un nodo A con los |β| hijos sacados).
   - accept: terminar con éxito. Error o celda vacía: rechazar.
 
+*Referencia (informe): Algoritmo 4.44 y Fig. 4.36, libro pp. 250-251.*
+
 ---
 
 ## 5.1 Definiciones dirigidas por la sintaxis (SDD)
 
 - A cada símbolo se le asocian **atributos**. Una SDD asocia a cada producción **reglas semánticas**.
-- **Sintetizado**: atributo de la cabeza A de la producción, calculado desde atributos de los hijos (y/o de A misma).
-- **Heredado**: atributo de un símbolo B del cuerpo, calculado desde atributos de la cabeza y/o de hermanos de B.
+- **Sintetizado**: atributo de la cabeza A de la producción, calculado desde atributos de los hijos y
+  atributos (incluidos heredados) del propio nodo A.
+- **Heredado**: atributo de un símbolo B del cuerpo, calculado desde atributos de la cabeza (padre), de
+  los hermanos y del propio B (libro pp. 304-305).
 - Los terminales solo tienen atributos sintetizados que da el scanner (aquí `lexval` = el carácter).
-- El símbolo inicial no tiene atributos heredados.
+- El símbolo inicial no tiene atributos heredados: es una regla del enunciado, no del libro.
 - **Árbol de parseo anotado**: árbol de parseo con los valores de los atributos en cada nodo.
+
+*Referencia (informe): libro pp. 304-305.*
 
 ## 5.2 Grafo de dependencias y orden de evaluación
 
@@ -115,3 +139,5 @@ Lo demás es error. Estado inicial = el que contiene S' → ·S.
   (b) atributos (heredados o sintetizados) de X1...X(i-1), o (c) atributos del propio Xi sin formar ciclos.
   Toda SDD S-atribuida es también L-atribuida.
 - Aquí hay que implementar el método general (grafo + orden topológico), aunque la SDD sea L-atribuida.
+
+*Referencias (informe): 5.2.1 pp. 310-311; 5.2.2 p. 312; 5.2.3 pp. 312-313; 5.2.4 pp. 313-314.*

@@ -3,14 +3,24 @@ Definicion dirigida por la sintaxis (SDD) del Item 3 y su evaluador.
 
 Secciones del libro que se siguen (Aho et al., 2a edicion):
 
-  5.1.1  atributos sintetizados y heredados; reglas de verificacion del SDD.
+  5.1.1  atributos sintetizados y heredados; reglas de verificacion del SDD
+         (libro pp. 304-305).
   5.1.2  arbol de analisis anotado (un valor por atributo en cada nodo).
   5.2.1  grafo de dependencias: un vertice por atributo de cada nodo y una
-         arista desde el atributo que se USA hasta el atributo que se DEFINE.
+         arista desde el atributo que se USA hasta el atributo que se DEFINE
+         (libro pp. 310-311).
   5.2.2  orden de evaluacion: orden topologico del grafo; si hay ciclo el SDD
-         es circular y no se evalua.
-  5.2.3  definiciones S-atribuidas.
-  5.2.4  definiciones L-atribuidas.
+         es circular y no se evalua (libro p. 312).
+  5.2.3  definiciones S-atribuidas (libro pp. 312-313).
+  5.2.4  definiciones L-atribuidas (libro pp. 313-314).
+
+Que atributos puede usar cada clase (5.1, libro pp. 304-305): un atributo
+sintetizado de A puede usar atributos de los hijos y atributos (heredados
+incluidos) del propio nodo A; un atributo heredado de B puede usar atributos de
+la cabeza (padre), de los hermanos y del propio B. La definicion L-atribuida
+(5.2.4) es mas estricta: prohibe que un heredado de Xi use atributos del propio
+Xi. El enunciado agrega una regla suya, que no viene del libro: el simbolo
+inicial no lleva atributos heredados.
 
 La SDD es DATOS, no codigo: el evaluador (grafo + orden topologico + llamado de
 las funciones) no sabe nada de esta gramatica ni de estos atributos. Cambiar la
@@ -118,6 +128,9 @@ def valor_con_digito(valor_del_digito_actual, exponente, valor_del_resto):
 REGLAS = {
     # S -> N : el exponente del primer digito sale de la longitud de N, y el
     # valor del numero sube tal cual al simbolo inicial.
+    # Ojo: N.e es heredado y usa N.len, un sintetizado del propio N. La seccion
+    # 5.1 lo permite (un heredado de B puede usar atributos del propio B), pero
+    # la 5.2.4 lo prohibe: por eso esta SDD no es L-atribuida.
     ('S', ('N',)): [
         {'define': (1, 'e'), 'usa': [(1, 'len')], 'funcion': exponente_del_primero},
         {'define': (0, 'v'), 'usa': [(1, 'v')], 'funcion': identidad},
