@@ -286,16 +286,34 @@ program's own output.
 
 ## Tests
 
-```bash
-python3 tests/pruebas.py
+```powershell
+py tests\pruebas.py                 # all 93 tests
+py tests\pruebas.py ll1 sdd         # only those groups
+py tests\pruebas.py --lista         # group names
 ```
 
-The 93 tests compare exact text: the four output cases of the assignment, the
-`--sets` output, the LL(1) tables, the SLR(1) tables and automaton sizes, the
-engines on several grammars, the SDD values, the annotated tree and evaluation
-order, the topological order itself, the cross-check between both parsers and the
-circular-SDD detection. The script prints `OK`/`FAIL` per test, a final count,
-and exits with code 1 if anything failed.
+```bash
+python3 tests/pruebas.py            # the same on Linux/macOS
+```
+
+Each test compares exact text against a fixed expected output. The groups can be run on their own,
+which is useful to show one part at a time:
+
+| Group | Checks | What it covers |
+|---|---|---|
+| `item1` | 12 | FIRST/FOLLOW sets, including the fixed point and the `--sets` output |
+| `ll1` | 16 | predictive table, conflicts and the LL(1) parser |
+| `slr` | 28 | LR(0) items, CLOSURE/GOTO, automaton, ACTION/GOTO and the LR parser |
+| `main` | 11 | `main.py` and its modes (`--sets`, `--sdd`, `--sdd --lr`, `--sdd --circular`) |
+| `sdd` | 26 | SDD values, annotated tree, dependency graph and evaluation order |
+
+The script prints `OK`/`FAIL` per check and a final count, and exits with code 1 if anything fails.
+Run it from the root of the project (the tests read `docs/` and run `main.py` as a subprocess).
+
+Between them the 93 checks cover the four output cases of the assignment, the `--sets` output, the
+LL(1) tables, the SLR(1) tables and automaton sizes, the engines on several grammars, the SDD
+values, the annotated tree and evaluation order, the topological order itself, the cross-check
+between both parsers and the circular-SDD detection.
 
 ## Use of AI tools
 

@@ -3,7 +3,9 @@ Pruebas del proyecto de Lenguajes Formales.
 
 Se ejecuta desde la raiz del proyecto:
 
-    python3 tests/pruebas.py
+    python3 tests/pruebas.py              # las 93 pruebas
+    python3 tests/pruebas.py ll1 sdd      # solo esos grupos
+    python3 tests/pruebas.py --lista      # nombres de los grupos
 
 Cada prueba compara texto exacto, porque el enunciado fija el formato de
 salida. Las pruebas se agregan fase por fase.
@@ -665,13 +667,52 @@ def pruebas_item_3():
               'SDD is circular: N#2.v -> D#3.e -> N#2.e -> N#2.v\n')
 
 
+GRUPOS = [
+    ('item1', 'conjuntos FIRST/FOLLOW', pruebas_item_1),
+    ('ll1', 'tabla predictiva y analizador LL(1)', pruebas_item_2_ll1),
+    ('slr', 'automata LR(0), ACTION/GOTO y analizador SLR(1)', pruebas_item_2_slr1),
+    ('main', 'main.py y sus modos', pruebas_main),
+    ('sdd', 'SDD, arbol anotado y orden de evaluacion', pruebas_item_3),
+]
+
+
+def ayuda():
+    """Imprime el uso del script y la lista de grupos."""
+    print('Uso: python3 tests/pruebas.py [grupo ...]')
+    print('')
+    print('Sin argumentos corre las 93 pruebas. Con uno o varios grupos corre')
+    print('solo esos. Tambien acepta --lista para ver los grupos.')
+    print('')
+    print('Grupos:')
+    for nombre, descripcion, _ in GRUPOS:
+        print('  ' + nombre.ljust(6) + descripcion)
+
+
 def main():
-    """Ejecuta todas las pruebas y devuelve 0 si todo paso, 1 si algo fallo."""
-    pruebas_item_1()
-    pruebas_item_2_ll1()
-    pruebas_item_2_slr1()
-    pruebas_main()
-    pruebas_item_3()
+    """Ejecuta las pruebas pedidas y devuelve 0 si todo paso, 1 si algo fallo."""
+    pedidos = sys.argv[1:]
+
+    if pedidos and pedidos[0] in ('-h', '--ayuda', '--help'):
+        ayuda()
+        return 0
+
+    if pedidos and pedidos[0] == '--lista':
+        for nombre, descripcion, _ in GRUPOS:
+            print(nombre.ljust(6) + descripcion)
+        return 0
+
+    if pedidos:
+        conocidos = dict((nombre, funcion) for nombre, _, funcion in GRUPOS)
+        desconocidos = [nombre for nombre in pedidos if nombre not in conocidos]
+        if desconocidos:
+            print('Grupo desconocido: ' + ', '.join(desconocidos))
+            print('Grupos validos: ' + ', '.join(conocidos))
+            return 1
+        for nombre in pedidos:
+            conocidos[nombre]()
+    else:
+        for _, _, funcion in GRUPOS:
+            funcion()
 
     print('')
     print('Correctas: ' + str(CORRECTAS[0]) + '   Fallidas: ' + str(FALLIDAS[0]))
