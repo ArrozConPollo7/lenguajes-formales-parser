@@ -1,6 +1,6 @@
-# Formal Languages — LL(1) and SLR(1) parsers with an SDD evaluator
+# Lenguajes Formales — LL(1) and SLR(1) parsers with an SDD evaluator
 
-Course project for *Formal Languages* (SI2002 / ST0270 / CM0081). The program is
+Course project for *Lenguajes Formales* (SI2002), Universidad EAFIT, November 2026. The program is
 written in plain Python (standard library only: no parser generators and no
 library that computes FIRST/FOLLOW sets, LR automata or parsing tables). It reads
 a context-free grammar, computes `FIRST` and `FOLLOW`, decides whether the
@@ -42,13 +42,21 @@ reports it that way.
 
 ## How to run
 
-Nothing to install: only Python 3 is needed.
+Nothing to install: only Python 3 is needed. Commands for Windows (PowerShell or cmd) and for
+Linux/macOS are the same, except `py` becomes `python3`.
+
+```powershell
+git clone https://github.com/ArrozConPollo7/lenguajes-formales-parser.git
+cd lenguajes-formales-parser
+py main.py            # reads the grammar, decides LL(1) / SLR(1)
+py main.py --sets     # prints FIRST and FOLLOW, then decides
+py tests\pruebas.py   # 93 tests, exact-text comparison
+```
 
 ```bash
-cd lenguajes-formales
-python3 main.py            # reads the grammar, decides LL(1) / SLR(1)
-python3 main.py --sets     # prints FIRST and FOLLOW, then decides
-python3 tests/pruebas.py   # 93 tests, exact-text comparison
+python3 main.py            # same three commands on Linux/macOS
+python3 main.py --sets
+python3 tests/pruebas.py
 ```
 
 The grammar is read from standard input in the format of Section 2.2 of the
@@ -114,6 +122,13 @@ $ printf '101\n7\ne\n12x\n\n' | cat docs/gramatica_sdd.txt - | python3 main.py -
 
 # SLR(1) parser instead of LL(1)
 $ printf '101\n\n' | cat docs/gramatica_sdd.txt - | python3 main.py --sdd --lr
+```
+
+On Windows, type the grammar and the strings by hand after `py main.py --sdd`, or prepend the file
+with PowerShell:
+
+```powershell
+@(Get-Content docs\gramatica_sdd.txt) + @('101','7','') | py main.py --sdd
 ```
 
 For the string `7` the output is:
