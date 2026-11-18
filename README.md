@@ -314,6 +314,4 @@ used and what for:
 
 We did not use AI tools to replace the reading of the book or the hand-worked
 examples: the FIRST/FOLLOW sets and tables in the report were computed by the
-program and verified by hand, and every member of the group can explain and
-modify the code during the oral presentation. No AI tool wrote any part of the
-program that we cannot account for line by line.
+program and verified by hand.
