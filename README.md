@@ -176,12 +176,23 @@ python3 visualizador.py --gramatica docs/gramatica_ejemplo.txt   # one grammar f
 python3 visualizador.py --check     # draws every view without a browser (quick test)
 ```
 
-It has four views, in the order of the presentation: the FIRST/FOLLOW sets with the cells each
-production fills; the predictive table with its conflicting cells and the ACTION/GOTO tables; the
-trace of the parser, one configuration per step; and the SDD, with the annotated tree, the
-dependency graph and the evaluation order advancing one attribute at a time (the visualizer that
-Section 3 of the assignment suggests). Every view is a URL, so any step of the explanation can be
-reproduced exactly, for example `/sdd?cadena=12&paso=5`.
+It has five views that follow the explanation, each one with a plain-language "what am I looking
+at" paragraph, the data, and the algorithm it comes from:
+
+1. **Conjuntos** — FIRST and FOLLOW per nonterminal, FIRST of every production, and the fixed-point
+   rules that compute them.
+2. **Tablas** — the LL(1) table (click a cell to see why that production was chosen) and the
+   ACTION/GOTO tables, with conflicting cells highlighted.
+3. **Autómata** — the LR(0) states drawn as a graph, with the items of the selected state and where
+   each symbol leads.
+4. **Traza** — the parser step by step: stack, remaining input and action, next to the algorithm's
+   pseudo-code with the line being executed highlighted, plus a plain-Spanish explanation of every
+   action. Arrow keys move between steps and "Reproducir" plays the whole trace.
+5. **SDD** — annotated tree, dependency graph and evaluation order, one attribute at a time.
+
+Every view is a URL, so any step of the explanation can be reproduced exactly, for example
+`/sdd?cadena=12&paso=5` or `/traza?parser=ll1&cadena=aabb&paso=7`. The visualizer never recomputes
+anything: `main.py` and the five modules are untouched by it.
 
 The visualizer does not change the behaviour of `main.py`: the output required by the assignment is
 still produced by `python3 main.py`, as described above.
@@ -195,7 +206,7 @@ ll1.py                predictive table, LL(1) test and stack parser (4.4.3, 4.4.
 slr1.py               LR(0) items, CLOSURE/GOTO, automaton, tables, LR parser (4.6.2, 4.6.4, 4.6.3)
 sdd.py                the SDD as data, dependency graph, topological order, cycle detection (5.1, 5.2)
 main.py               input/output, menu, and the modes --sets, --sdd, --sdd --lr, --sdd --circular
-visualizador.py       optional visualizer: four views served from the standard library (client only)
+visualizador.py       optional visualizer: five didactic views (client only, standard library)
 tests/pruebas.py      93 exact-text tests
 docs/ENUNCIADO.md     assignment statement
 docs/CONTEXTO_LIBRO.md summary of sections 4.4 to 5.2 of the book
