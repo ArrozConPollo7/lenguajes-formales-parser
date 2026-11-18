@@ -32,21 +32,91 @@ import slr1
 CORRECTAS = [0]
 FALLIDAS = [0]
 
+# Modos de impresion: -v muestra cada comparacion y --completo no recorta.
+VERBOSO = [False]
+COMPLETO = [False]
+LIMITE = 16
+
+
+def sangrar(texto, prefijo='    '):
+    """Devuelve el texto con cada linea indentada y sin la linea final vacia."""
+    lineas = texto.split('\n')
+    if lineas and lineas[-1] == '':
+        lineas.pop()
+    return '\n'.join(prefijo + linea for linea in lineas)
+
+
+def formatear(valor):
+    """Convierte un valor comparado en texto legible.
+
+    Las tablas (diccionarios con claves (fila, columna)) se dibujan como
+    tabla; las listas de tuplas van una por linea; el resto se imprime tal cual.
+    """
+    if isinstance(valor, str):
+        return valor
+    if isinstance(valor, dict) and valor and all(
+            isinstance(clave, tuple) and len(clave) == 2 for clave in valor):
+        filas = []
+        for clave in valor:
+            if clave[0] not in filas:
+                filas.append(clave[0])
+        columnas = sorted({clave[1] for clave in valor})
+        ancho = max(len(str(f)) for f in filas) + 2
+        lineas = [' ' * ancho + ' '.join(str(c).rjust(6) for c in columnas)]
+        for fila in filas:
+            celdas = []
+            for columna in columnas:
+                celdas.append(str(valor.get((fila, columna), '.')).rjust(6))
+            lineas.append(str(fila).ljust(ancho) + ' '.join(celdas))
+        return '\n'.join(lineas)
+    if isinstance(valor, (list, tuple)):
+        return '\n'.join(str(elemento) for elemento in valor)
+    return str(valor)
+
+
+def bloque(etiqueta, texto):
+    """Imprime un texto comparado, recortado salvo con --completo."""
+    if not isinstance(texto, str):
+        texto = formatear(texto)
+    lineas = texto.split('\n')
+    if lineas and lineas[-1] == '':
+        lineas.pop()
+    if not lineas:
+        print('    ' + etiqueta + ': (vacio)')
+        return
+    print('    ' + etiqueta + ' (' + str(len(lineas)) + (' linea):' if len(lineas) == 1 else ' lineas):'))
+    if COMPLETO[0] or len(lineas) <= LIMITE:
+        print(sangrar(texto, '    | '))
+    else:
+        print(sangrar('\n'.join(lineas[:LIMITE]), '    | '))
+        print('    | ... ' + str(len(lineas) - LIMITE) + ' lineas mas (usa --completo)')
+
+
+def seccion(titulo):
+    """Imprime el nombre del grupo que empieza."""
+    print('')
+    print('== ' + titulo + ' ' + '=' * max(0, 68 - len(titulo)))
+
 
 def comprobar(nombre, obtenido, esperado):
     """Compara dos textos y anota el resultado.
 
     Recibe: nombre de la prueba, texto obtenido y texto esperado.
-    No devuelve nada; imprime OK o FALLA con el detalle.
+    No devuelve nada; imprime OK o FALLA y, en modo verboso o al fallar,
+    el texto esperado y el obtenido para poder revisarlo linea por linea.
     """
     if obtenido == esperado:
         CORRECTAS[0] += 1
         print('OK    ' + nombre)
+        if VERBOSO[0]:
+            bloque('esperado', esperado)
     else:
         FALLIDAS[0] += 1
         print('FALLA ' + nombre)
-        print('  esperado: ' + repr(esperado))
-        print('  obtenido: ' + repr(obtenido))
+        bloque('esperado', esperado)
+        bloque('obtenido', obtenido)
+    if VERBOSO[0]:
+        print('')
 
 
 def conjuntos(entrada):
@@ -676,12 +746,89 @@ GRUPOS = [
 ]
 
 
+def conjunto_texto(conjunto):
+    """Devuelve un conjunto como {a, b} con los simbolos ordenados."""
+    return '{' + ', '.join(sorted(conjunto)) + '}'
+
+
+def demo():
+    """Recorre un ejemplo completo e imprime cada paso del analisis."""
+    ruta = os.path.join(RAIZ, 'docs', 'gramatica_ejemplo.txt')
+    with open(ruta, encoding='utf-8') as archivo:
+        texto = archivo.read()
+
+    g = grammar.leer_gramatica(io.StringIO(texto))
+    first = first_follow.first_de_simbolos(g)
+    follow = first_follow.follow(g, first)
+    tabla, conflictos = ll1.construir_tabla(g, first, follow)
+    producciones, por_cabeza = slr1.aumentar(g)
+    estados, transiciones = slr1.automata_lr0(producciones, por_cabeza)
+    action, goto_tabla, conflictos_slr = slr1.construir_tablas(
+        producciones, estados, transiciones, follow)
+
+    print('== Demo: de la gramatica al analisis, paso a paso ==')
+    print('')
+    print('Archivo: docs/gramatica_ejemplo.txt')
+    for linea in texto.strip().split('\n'):
+        print('    ' + linea)
+
+    print('')
+    print('Paso 1. FIRST y FOLLOW de cada no terminal')
+    for no_terminal in grammar.no_terminales(g):
+        print('    First(' + no_terminal + ') = ' + conjunto_texto(first[no_terminal])
+              + '    Follow(' + no_terminal + ') = ' + conjunto_texto(follow[no_terminal]))
+
+    print('')
+    print('Paso 2. Que analizador puede usar esta gramatica')
+    if conflictos:
+        print('    LL(1): no. Celdas en conflicto: '
+              + ', '.join('M[' + str(a) + ', ' + str(b) + ']' for a, b in sorted(conflictos)))
+    else:
+        print('    LL(1): si')
+    if conflictos_slr:
+        print('    SLR(1): no. Conflictos: ' + str(len(conflictos_slr)))
+    else:
+        print('    SLR(1): si')
+
+    print('')
+    print('Paso 3. Tabla SLR(1)')
+    print('    ' + str(len(estados)) + ' estados LR(0), ' + str(len(transiciones))
+          + ' transiciones, ACTION/GOTO sin conflictos')
+
+    cadena = 'x;[x]'
+    pasos = []
+    aceptada, _ = slr1.parsear_lr(producciones, action, goto_tabla, cadena, pasos)
+    print('')
+    print('Paso 4. Analisis de "' + cadena + '" con el algoritmo 4.6.3')
+    print('    ' + 'paso'.ljust(6) + 'pila de estados'.ljust(20)
+          + 'simbolos'.ljust(14) + 'entrada'.ljust(12) + 'accion')
+    for numero, (pila, simbolos, entrada, accion) in enumerate(pasos, 1):
+        print('    ' + str(numero).ljust(6) + pila.ljust(20)
+              + (simbolos or '-').ljust(14) + entrada.ljust(12) + accion)
+    print('')
+    print('    Resultado: ' + ('aceptada' if aceptada else 'rechazada'))
+    print('    (la misma traza se ve en el navegador en /traza?parser=slr&cadena=' + cadena + ')')
+    return 0
+
+
+def descripcion_de(nombre):
+    """Devuelve la descripcion de un grupo por su nombre."""
+    for clave, descripcion, _ in GRUPOS:
+        if clave == nombre:
+            return clave + ' - ' + descripcion
+    return nombre
+
+
 def ayuda():
     """Imprime el uso del script y la lista de grupos."""
     print('Uso: python3 tests/pruebas.py [grupo ...]')
     print('')
     print('Sin argumentos corre las 93 pruebas. Con uno o varios grupos corre')
-    print('solo esos. Tambien acepta --lista para ver los grupos.')
+    print('solo esos. --lista muestra los grupos.')
+    print('')
+    print('  --demo          recorre un ejemplo completo paso a paso')
+    print('  -v, --verboso   muestra cada comparacion: esperado y obtenido')
+    print('  --completo      no recorta los textos largos (con -v)')
     print('')
     print('Grupos:')
     for nombre, descripcion, _ in GRUPOS:
@@ -690,7 +837,13 @@ def ayuda():
 
 def main():
     """Ejecuta las pruebas pedidas y devuelve 0 si todo paso, 1 si algo fallo."""
-    pedidos = sys.argv[1:]
+    pedidos = [a for a in sys.argv[1:]
+               if a not in ('-v', '--verboso', '--completo', '--demo')]
+    VERBOSO[0] = any(a in ('-v', '--verboso') for a in sys.argv[1:])
+    COMPLETO[0] = '--completo' in sys.argv[1:]
+
+    if '--demo' in sys.argv[1:]:
+        return demo()
 
     if pedidos and pedidos[0] in ('-h', '--ayuda', '--help'):
         ayuda()
@@ -709,9 +862,13 @@ def main():
             print('Grupos validos: ' + ', '.join(conocidos))
             return 1
         for nombre in pedidos:
+            if VERBOSO[0]:
+                seccion(descripcion_de(nombre))
             conocidos[nombre]()
     else:
-        for _, _, funcion in GRUPOS:
+        for nombre, descripcion, funcion in GRUPOS:
+            if VERBOSO[0]:
+                seccion(nombre + ' - ' + descripcion)
             funcion()
 
     print('')

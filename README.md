@@ -289,6 +289,8 @@ program's own output.
 ```powershell
 py tests\pruebas.py                 # all 93 tests
 py tests\pruebas.py ll1 sdd         # only those groups
+py tests\pruebas.py -v              # every check with what it compares
+py tests\pruebas.py --demo          # one example end to end, step by step
 py tests\pruebas.py --lista         # group names
 ```
 
@@ -306,6 +308,12 @@ which is useful to show one part at a time:
 | `slr` | 28 | LR(0) items, CLOSURE/GOTO, automaton, ACTION/GOTO and the LR parser |
 | `main` | 11 | `main.py` and its modes (`--sets`, `--sdd`, `--sdd --lr`, `--sdd --circular`) |
 | `sdd` | 26 | SDD values, annotated tree, dependency graph and evaluation order |
+
+`--demo` is the one to use in the presentation: it reads the example grammar, prints its
+FIRST/FOLLOW sets, says which parser applies, and then walks the SLR(1) parse of `x;[x]` one step per
+line (state stack, symbols, remaining input, action) until it accepts. `-v` does the same for each
+individual check: it shows what the test compares, with tables drawn as tables. `--completo` stops
+`-v` from cropping long outputs.
 
 The script prints `OK`/`FAIL` per check and a final count, and exits with code 1 if anything fails.
 Run it from the root of the project (the tests read `docs/` and run `main.py` as a subprocess).
